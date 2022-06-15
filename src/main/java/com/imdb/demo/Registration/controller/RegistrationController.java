@@ -31,7 +31,12 @@ public class RegistrationController {
     }
 
     @PostMapping("/signIn")
-    public String signIn(@RequestBody Registration registration){
+    public String signIn(@RequestBody Registration registration) throws MessagingException, TemplateException, IOException {
         return mailService.signIn(registration);
     }
+    @PostMapping("/signInWithOtp")
+    public String LoginWithOtp(@RequestBody Registration registration) throws MessagingException, TemplateException, IOException {
+        return mailService.LoginWithOtp(registration);
+    }
+
 }

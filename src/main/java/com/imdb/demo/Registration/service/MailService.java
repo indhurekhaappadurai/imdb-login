@@ -31,11 +31,24 @@ public class MailService {
     @Autowired
     RegistrationRepository registrationRepository;
 
+    /**
+     * Method to generate OTP
+     * @param email
+     * @return encodedOTP
+     */
     public String generateOneTimePassword(String email) {
         int OTP = Integer.parseInt(new DecimalFormat("000000").format(new Random().nextInt(999999)));
         String encodedOTP = String.valueOf(OTP);
         return encodedOTP;
     }
+
+    /**
+     * Method to get EmailTemplate
+     * @param registration
+     * @return template
+     * @throws IOException
+     * @throws TemplateException
+     */
     public String getEmailContent(Registration registration) throws IOException, TemplateException {
         StringWriter stringWriter = new StringWriter();
         String email = registration.getEmail();
@@ -45,6 +58,14 @@ public class MailService {
         return stringWriter.getBuffer().toString();
     }
 
+    /**
+     * Method to send otp to email
+     * @param registration
+     * @throws MessagingException
+     * @throws IOException
+     * @throws TemplateException
+     * @throws MessagingException
+     */
     public void sendOtpEmail(Registration registration) throws MessagingException, IOException, TemplateException, MessagingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage);
@@ -55,21 +76,33 @@ public class MailService {
         javaMailSender.send(mimeMessage);
     }
 
+    /**
+     * Method to verify Email
+     * @param registration
+     * @return String message
+     * @throws MessagingException
+     * @throws TemplateException
+     * @throws IOException
+     */
     public String validate(Registration registration) throws MessagingException, TemplateException, IOException {
         if (registrationRepository.existsByEmail(registration.getEmail()) && registrationRepository.existsByOtp(registration.getOtp())) {
-            String otp = generateOneTimePassword(registration.getEmail());
-            registration.setOtp(otp);
-            registrationRepository.updateOtp(registration.getEmail(),otp);
-            sendOtpEmail(registration);
-            return ("User Registered Successfully"+"\r\n"+"SignIn with this OTP that has been sent to the registered Email ID");
+            return "User Registered Successfully";
         }
         else
         {
-            registrationRepository.removeByEmail(registration.getEmail());
-            return "SignUp with EmailId and UserName again";
+          registrationRepository.removeByEmail(registration.getEmail());
+            return "Invalid Credential.SignUp with EmailId and UserName again";
         }
     }
 
+    /**
+     * Method to sign up account
+     * @param registration
+     * @return String message
+     * @throws MessagingException
+     * @throws TemplateException
+     * @throws IOException
+     */
     public String signUp(Registration registration) throws MessagingException, TemplateException, IOException {
         if (registrationRepository.existsByEmail(registration.getEmail())){
             return "Email Already Exist";
@@ -84,13 +117,43 @@ public class MailService {
         return "An OTP has been sent to the registered Email ID";
     }
 
-    public String signIn(Registration registration){
-        if (registrationRepository.existsByEmail(registration.getEmail()) && registrationRepository.existsByOtp(registration.getOtp())) {
-            return "User LoggedIn Successfully";
+    /**
+     * Method to login with registered email,it will send otp to email.
+     * @param registration
+     * @return String message
+     * @throws MessagingException
+     * @throws TemplateException
+     * @throws IOException
+     */
+    public String signIn(Registration registration) throws MessagingException, TemplateException, IOException {
+        if (registrationRepository.existsByEmail(registration.getEmail())) {
+            String otp = generateOneTimePassword(registration.getEmail());
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            String time = registration.setExpiration(timestamp.toString());
+            registration.setOtp(otp);
+            sendOtpEmail(registration);
+            registrationRepository.updateOtp(registration.getEmail(),otp);
+            return "Otp sent to your Registered Email";
+        } else {
+            return "User Not Registered";
         }
-        else
-        {
-            return "Invalid EmailId or OTP .";
-        }
+    }
+
+    /**
+     * Method to login with OTP
+     * @param registration
+     * @return String message
+     * @throws MessagingException
+     * @throws TemplateException
+     * @throws IOException
+     */
+        public String LoginWithOtp(Registration registration) throws MessagingException, TemplateException, IOException {
+            if (registrationRepository.existsByEmail(registration.getEmail()) && registrationRepository.existsByOtp(registration.getOtp())) {
+                return "User Login Successfully";
+            }
+            else
+            {
+                return "Sign In Again";
+            }
     }
 }
