@@ -38,5 +38,4 @@ public class RegistrationController {
     public String LoginWithOtp(@RequestBody Registration registration) throws MessagingException, TemplateException, IOException {
         return mailService.LoginWithOtp(registration);
     }
-
 }
